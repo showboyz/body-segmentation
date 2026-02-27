@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Body Silhouette Capture</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-state="loading">
+
+  <header>
+    <h1>Body Silhouette Capture</h1>
+    <p class="subtitle">바디 실루엣 캡처</p>
+  </header>
+
+  <main>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <p>모델 로딩 중...</p>
+    </div>
+
+    <!-- Preview Section -->
+    <section id="preview-section">
+      <div class="preview-row">
+        <div class="preview-box">
+          <label>웹캠 Webcam</label>
+          <video id="webcam" autoplay playsinline muted></video>
+        </div>
+        <div class="preview-box">
+          <label>실루엣 Silhouette</label>
+          <canvas id="preview-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Countdown Overlay -->
+      <div id="countdown-overlay" class="hidden">
+        <span id="countdown-display"></span>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section id="controls">
+      <div class="control-group">
+        <label>녹화 시간</label>
+        <div class="btn-group" id="duration-group">
+          <button data-value="2">2초</button>
+          <button data-value="3" class="active">3초</button>
+          <button data-value="5">5초</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>배경</label>
+        <div class="btn-group" id="bg-group">
+          <button data-value="transparent" class="active">투명</button>
+          <button data-value="white">흰색</button>
+          <button data-value="black">검정</button>
+        </div>
+      </div>
+
+      <button id="btn-record" class="btn-primary">녹화 시작</button>
+      <button id="btn-snapshot" class="btn-snapshot">사진 촬영</button>
+    </section>
+
+    <!-- Snapshot Preview -->
+    <section id="snapshot-section" class="hidden">
+      <h2>촬영 결과</h2>
+      <div id="snapshot-wrapper">
+        <canvas id="snapshot-canvas"></canvas>
+      </div>
+      <div id="snapshot-buttons">
+        <button id="btn-snapshot-png" class="btn-export">PNG 저장</button>
+        <button id="btn-snapshot-webp" class="btn-export">WebP 저장</button>
+      </div>
+      <button id="btn-snapshot-close" class="btn-secondary">돌아가기</button>
+    </section>
+
+    <!-- Recording Progress -->
+    <section id="recording-status" class="hidden">
+      <div class="progress-bar">
+        <div id="progress-fill"></div>
+      </div>
+      <p id="recording-info"></p>
+    </section>
+
+    <!-- Review Section -->
+    <section id="review-section" class="hidden">
+      <h2>미리보기</h2>
+      <div id="animation-wrapper">
+        <canvas id="animation-canvas"></canvas>
+      </div>
+      <!-- Trim Controls -->
+      <div id="trim-controls">
+        <label>구간 선택</label>
+        <div id="trim-slider">
+          <div id="trim-track">
+            <div id="trim-range"></div>
+          </div>
+          <input type="range" id="trim-start" min="0" max="100" value="0">
+          <input type="range" id="trim-end" min="0" max="100" value="100">
+        </div>
+        <div id="trim-info">
+          <span id="trim-start-label">시작: 0</span>
+          <span id="trim-count"></span>
+          <span id="trim-end-label">끝: 0</span>
+        </div>
+        <button id="btn-apply-trim" class="btn-trim">자르기 적용</button>
+      </div>
+
+      <div id="frame-preview"></div>
+      <p id="frame-info"></p>
+
+      <!-- Export Buttons -->
+      <div id="export-buttons">
+        <button id="btn-export-png" class="btn-export">PNG 다운로드 (ZIP)</button>
+        <button id="btn-export-webp" class="btn-export">WebP 다운로드</button>
+        <button id="btn-export-gif" class="btn-export">GIF 다운로드</button>
+        <button id="btn-export-sprite" class="btn-export">스프라이트 시트</button>
+      </div>
+
+      <button id="btn-again" class="btn-secondary">다시 녹화</button>
+    </section>
+  </main>
+
+  <!-- Hidden processing canvas -->
+  <canvas id="processing-canvas" style="display:none;"></canvas>
+
+  <!-- CDN Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-segmentation"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3/dist/jszip.min.js"></script>
+
+  <!-- Application -->
+  <script src="js/segmenter.js"></script>
+  <script src="js/recorder.js"></script>
+  <script src="js/exporter.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
