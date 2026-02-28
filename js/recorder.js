@@ -12,14 +12,19 @@ const Recorder = {
       case 'transparent': return { r: 0, g: 0, b: 0, a: 0 };
       case 'white':       return { r: 255, g: 255, b: 255, a: 255 };
       case 'black':       return { r: 0, g: 0, b: 0, a: 255 };
+      case 'outline':     return { r: 0, g: 0, b: 0, a: 255 };
     }
   },
 
   getFgColor() {
-    if (this.settings.bgMode === 'black') {
+    if (this.settings.bgMode === 'black' || this.settings.bgMode === 'outline') {
       return { r: 255, g: 255, b: 255, a: 255 };
     }
     return { r: 0, g: 0, b: 0, a: 255 };
+  },
+
+  getOutlineMode() {
+    return this.settings.bgMode === 'outline' ? 3 : false;
   },
 
   async startCountdown(onTick) {
@@ -44,6 +49,7 @@ const Recorder = {
 
     const fgColor = this.getFgColor();
     const bgColor = this.getBgColor();
+    const outlineMode = this.getOutlineMode();
 
     return new Promise((resolve) => {
       const captureFrame = async () => {
@@ -62,7 +68,7 @@ const Recorder = {
         const poseResult = results[1];
 
         const maskImageData = await Segmenter.createSilhouetteMask(
-          people, fgColor, bgColor
+          people, fgColor, bgColor, outlineMode
         );
 
         ctx.clearRect(0, 0, processingCanvas.width, processingCanvas.height);

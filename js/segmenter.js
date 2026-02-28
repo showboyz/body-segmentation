@@ -32,11 +32,15 @@ const Segmenter = {
     });
   },
 
-  async createSilhouetteMask(people, fgColor, bgColor) {
+  async createSilhouetteMask(people, fgColor, bgColor, outlineMode) {
     var rawMask = await bodySegmentation.toBinaryMask(
       people, fgColor, bgColor, false, this.threshold
     );
-    return this._postProcess(rawMask, fgColor, bgColor);
+    var processed = this._postProcess(rawMask, fgColor, bgColor);
+    if (outlineMode) {
+      return this._extractContour(processed, fgColor, bgColor, outlineMode);
+    }
+    return processed;
   },
 
   _isForeground: function(data, idx, fgColor) {
@@ -140,6 +144,97 @@ const Segmenter = {
 
     for (var k = 0; k < out.length; k += 4) {
       if (out[k] > this.smoothCut) {
+        out[k] = fgColor.r; out[k+1] = fgColor.g; out[k+2] = fgColor.b; out[k+3] = fgColor.a;
+      } else {
+        out[k] = bgColor.r; out[k+1] = bgColor.g; out[k+2] = bgColor.b; out[k+3] = bgColor.a;
+      }
+    }
+
+    return new ImageData(out, w, h);
+  },
+
+  // 외곽선 추출: 실루엣 경계만 그리기
+  _extractContour: function(imageData, fgColor, bgColor, lineWidth) {
+    lineWidth = lineWidth || 3;
+    var w = imageData.width;
+    var h = imageData.height;
+    var src = imageData.data;
+    var self = this;
+    var edgeMargin = 10; // 프레임 가장자리 무시 영역
+
+    // 1단계: 전경 마스크 생성
+    var fg = new Uint8Array(w * h);
+    for (var i = 0; i < src.length; i += 4) {
+      fg[i / 4] = self._isForeground(src, i, fgColor) ? 1 : 0;
+    }
+
+    // 2단계: 외곽선 감지 (프레임 경계에 닿는 부분은 제외)
+    var contour = new Uint8Array(w * h);
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        var idx = y * w + x;
+        if (fg[idx] === 0) continue;
+
+        // 프레임 가장자리 근처는 외곽선 그리지 않음
+        if (y >= h - edgeMargin || x < edgeMargin || x >= w - edgeMargin) continue;
+
+        var isEdge = false;
+        for (var dy = -lineWidth; dy <= lineWidth && !isEdge; dy++) {
+          for (var dx = -lineWidth; dx <= lineWidth && !isEdge; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            if (dx*dx + dy*dy > lineWidth*lineWidth) continue;
+            var ny = y + dy, nx = x + dx;
+            // 프레임 밖은 무시 (외곽선으로 처리하지 않음)
+            if (ny < 0 || ny >= h || nx < 0 || nx >= w) continue;
+            if (fg[ny * w + nx] === 0) isEdge = true;
+          }
+        }
+        if (isEdge) contour[idx] = 1;
+      }
+    }
+
+    // 3단계: 다중 블러 + 재이진화로 매끈한 외곽선
+    var canvas = this._tempCanvas;
+    var ctx = this._tempCtx;
+    canvas.width = w;
+    canvas.height = h;
+
+    var contourData = new Uint8ClampedArray(w * h * 4);
+    for (var j = 0; j < contour.length; j++) {
+      var pi = j * 4;
+      var v = contour[j] ? 255 : 0;
+      contourData[pi] = v; contourData[pi+1] = v; contourData[pi+2] = v; contourData[pi+3] = 255;
+    }
+
+    ctx.putImageData(new ImageData(contourData, w, h), 0, 0);
+
+    // 2패스 블러 → 재이진화 → 블러 (매끈한 곡선)
+    for (var p = 0; p < 2; p++) {
+      ctx.filter = 'blur(2px)';
+      ctx.drawImage(canvas, 0, 0);
+      ctx.filter = 'none';
+
+      var mid = ctx.getImageData(0, 0, w, h);
+      var md = mid.data;
+      for (var m = 0; m < md.length; m += 4) {
+        var val = md[m] > 80 ? 255 : 0;
+        md[m] = val; md[m+1] = val; md[m+2] = val; md[m+3] = 255;
+      }
+      ctx.putImageData(mid, 0, 0);
+    }
+
+    // 최종 부드러운 블러
+    ctx.filter = 'blur(1px)';
+    ctx.drawImage(canvas, 0, 0);
+    ctx.filter = 'none';
+
+    var blurred = ctx.getImageData(0, 0, w, h);
+    var bd = blurred.data;
+
+    // 4단계: 최종 색상 적용
+    var out = new Uint8ClampedArray(w * h * 4);
+    for (var k = 0; k < bd.length; k += 4) {
+      if (bd[k] > 50) {
         out[k] = fgColor.r; out[k+1] = fgColor.g; out[k+2] = fgColor.b; out[k+3] = fgColor.a;
       } else {
         out[k] = bgColor.r; out[k+1] = bgColor.g; out[k+2] = bgColor.b; out[k+3] = bgColor.a;

@@ -375,6 +375,7 @@ var App = {
 
     var fgColor = Recorder.getFgColor();
     var bgColor = Recorder.getBgColor();
+    var outlineMode = Recorder.getOutlineMode();
 
     // 세그멘테이션 + 포즈 감지 병렬 실행
     var results = await Promise.all([
@@ -384,7 +385,7 @@ var App = {
     var people = results[0];
     var poseResult = results[1];
 
-    var mask = await Segmenter.createSilhouetteMask(people, fgColor, bgColor);
+    var mask = await Segmenter.createSilhouetteMask(people, fgColor, bgColor, outlineMode);
 
     var canvas = document.getElementById('snapshot-canvas');
     var ctx = canvas.getContext('2d');
