@@ -21,8 +21,9 @@ var App = {
       this.videoElement.srcObject = stream;
       await this.videoElement.play();
 
-      // Init segmenter
+      // Init segmenter + pose detector
       await Segmenter.init();
+      await PoseDetector.init();
 
       // Start live preview
       this.setState('previewing');
@@ -40,13 +41,29 @@ var App = {
     if (this.state !== 'previewing' && this.state !== 'countdown') return;
 
     try {
-      var people = await Segmenter.segmentFrame(this.videoElement);
+      // 세그멘테이션 + 포즈 감지 병렬 실행
+      var results = await Promise.all([
+        Segmenter.segmentFrame(this.videoElement),
+        PoseDetector.estimatePose(this.videoElement)
+      ]);
+      var people = results[0];
+      var poseResult = results[1];
+
       var mask = await Segmenter.createSilhouetteMask(
         people,
         { r: 0, g: 0, b: 0, a: 255 },
         { r: 0, g: 0, b: 0, a: 0 }
       );
       Segmenter.drawLivePreview(this.previewCanvas, this.videoElement, mask);
+
+      // 스켈레톤 오버레이
+      if (poseResult && PoseDetector.showSkeleton) {
+        var ctx = this.previewCanvas.getContext('2d');
+        PoseDetector.drawSkeleton(
+          ctx, poseResult.keypoints,
+          this.videoElement.videoWidth, this.videoElement.videoHeight
+        );
+      }
     } catch (e) {
       // skip frame on error
     }
@@ -74,6 +91,15 @@ var App = {
     });
     document.getElementById('btn-snapshot-webp').addEventListener('click', function() {
       self.saveSnapshot('webp');
+    });
+    document.getElementById('btn-snapshot-pose').addEventListener('click', function() {
+      if (self._snapshotPose) {
+        var canvas = self._snapshotCanvas;
+        PoseExporter.exportSnapshotPoseJson(self._snapshotPose, {
+          width: canvas.width,
+          height: canvas.height
+        });
+      }
     });
 
     // Snapshot close
@@ -156,6 +182,22 @@ var App = {
       var w = self.videoElement.videoWidth;
       var h = self.videoElement.videoHeight;
       Exporter.exportSpriteSheet(self.getTrimmedFrames(), w, h, Recorder.settings.fps);
+    });
+
+    document.getElementById('btn-export-pose').addEventListener('click', function() {
+      var w = self.videoElement.videoWidth;
+      var h = self.videoElement.videoHeight;
+      PoseExporter.exportPoseJson(self.getTrimmedFrames(), {
+        fps: Recorder.settings.fps,
+        width: w,
+        height: h
+      });
+    });
+
+    // 스켈레톤 토글
+    document.getElementById('btn-toggle-skeleton').addEventListener('click', function() {
+      PoseDetector.showSkeleton = !PoseDetector.showSkeleton;
+      this.classList.toggle('active', PoseDetector.showSkeleton);
     });
   },
 
@@ -334,7 +376,14 @@ var App = {
     var fgColor = Recorder.getFgColor();
     var bgColor = Recorder.getBgColor();
 
-    var people = await Segmenter.segmentFrame(this.videoElement);
+    // 세그멘테이션 + 포즈 감지 병렬 실행
+    var results = await Promise.all([
+      Segmenter.segmentFrame(this.videoElement),
+      PoseDetector.estimatePose(this.videoElement)
+    ]);
+    var people = results[0];
+    var poseResult = results[1];
+
     var mask = await Segmenter.createSilhouetteMask(people, fgColor, bgColor);
 
     var canvas = document.getElementById('snapshot-canvas');
@@ -344,6 +393,9 @@ var App = {
     ctx.putImageData(mask, 0, 0);
 
     this._snapshotCanvas = canvas;
+    this._snapshotPose = PoseDetector.packagePose(
+      poseResult, mask.width, mask.height
+    );
     document.getElementById('snapshot-section').classList.remove('hidden');
     this.setState('snapshot');
   },
@@ -354,7 +406,7 @@ var App = {
     var ext = format === 'webp' ? '.webp' : '.png';
 
     canvas.toBlob(function(blob) {
-      Exporter.downloadBlob(blob, 'silhouette' + ext);
+      Exporter.downloadBlob(blob, 'silhouette_' + Exporter.timestamp() + ext);
     }, mimeType, 0.95);
   },
 

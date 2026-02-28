@@ -53,7 +53,14 @@ const Recorder = {
           return;
         }
 
-        const people = await Segmenter.segmentFrame(videoElement);
+        // 세그멘테이션 + 포즈 감지 병렬 실행
+        const results = await Promise.all([
+          Segmenter.segmentFrame(videoElement),
+          PoseDetector.estimatePose(videoElement)
+        ]);
+        const people = results[0];
+        const poseResult = results[1];
+
         const maskImageData = await Segmenter.createSilhouetteMask(
           people, fgColor, bgColor
         );
@@ -72,7 +79,10 @@ const Recorder = {
             maskImageData.width,
             maskImageData.height
           ),
-          index: capturedCount
+          index: capturedCount,
+          pose: PoseDetector.packagePose(
+            poseResult, processingCanvas.width, processingCanvas.height
+          )
         });
 
         capturedCount++;

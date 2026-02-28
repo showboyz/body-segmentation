@@ -1,7 +1,17 @@
 const Exporter = {
 
+  timestamp: function() {
+    var d = new Date();
+    return d.getFullYear() +
+      String(d.getMonth() + 1).padStart(2, '0') +
+      String(d.getDate()).padStart(2, '0') + '_' +
+      String(d.getHours()).padStart(2, '0') +
+      String(d.getMinutes()).padStart(2, '0') +
+      String(d.getSeconds()).padStart(2, '0');
+  },
+
   async exportPngZip(frames, filename) {
-    filename = filename || 'silhouettes';
+    filename = filename || ('silhouettes_' + this.timestamp());
     const zip = new JSZip();
     const folder = zip.folder(filename);
 
@@ -31,7 +41,7 @@ const Exporter = {
 
     // Fallback: encode each frame as WebP, pack into ZIP
     var zip = new JSZip();
-    var folder = zip.folder('silhouettes_webp');
+    var folder = zip.folder('silhouettes_webp_' + this.timestamp());
 
     for (var i = 0; i < frames.length; i++) {
       ctx.clearRect(0, 0, width, height);
@@ -43,7 +53,7 @@ const Exporter = {
     }
 
     var content = await zip.generateAsync({ type: 'blob' });
-    this.downloadBlob(content, 'silhouettes_webp.zip');
+    this.downloadBlob(content, 'silhouettes_webp_' + this.timestamp() + '.zip');
   },
 
   async _exportWebpViaVideo(frames, width, height, fps) {
@@ -69,7 +79,7 @@ const Exporter = {
     return new Promise(function(resolve) {
       recorder.onstop = function() {
         var blob = new Blob(chunks, { type: 'video/webm' });
-        Exporter.downloadBlob(blob, 'silhouette.webm');
+        Exporter.downloadBlob(blob, 'silhouette_' + Exporter.timestamp() + '.webm');
         resolve();
       };
 
@@ -125,7 +135,7 @@ const Exporter = {
     return new Promise(function(resolve) {
       gif.on('finished', function(blob) {
         URL.revokeObjectURL(workerUrl);
-        Exporter.downloadBlob(blob, 'silhouette.gif');
+        Exporter.downloadBlob(blob, 'silhouette_' + Exporter.timestamp() + '.gif');
         resolve();
       });
       gif.render();
@@ -154,7 +164,7 @@ const Exporter = {
 
     await new Promise(function(resolve) {
       sheetCanvas.toBlob(function(blob) {
-        Exporter.downloadBlob(blob, 'spritesheet.png');
+        Exporter.downloadBlob(blob, 'spritesheet_' + Exporter.timestamp() + '.png');
         resolve();
       }, 'image/png');
     });
@@ -171,7 +181,7 @@ const Exporter = {
       [JSON.stringify(meta, null, 2)],
       { type: 'application/json' }
     );
-    this.downloadBlob(metaBlob, 'spritesheet.json');
+    this.downloadBlob(metaBlob, 'spritesheet_' + this.timestamp() + '.json');
   },
 
   downloadBlob: function(blob, filename) {

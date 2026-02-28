@@ -478,6 +478,13 @@ body[data-state="countdown"] #btn-record {
   border-color: #888;
 }
 
+/* Skeleton Toggle */
+#btn-toggle-skeleton.active {
+  background: #00ff88;
+  color: #1a1a2e;
+  border-color: #00ff88;
+}
+
 /* Utility */
 .hidden {
   display: none !important;

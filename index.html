@@ -59,6 +59,13 @@
         </div>
       </div>
 
+      <div class="control-group">
+        <label>스켈레톤</label>
+        <div class="btn-group">
+          <button id="btn-toggle-skeleton" class="active">표시</button>
+        </div>
+      </div>
+
       <button id="btn-record" class="btn-primary">녹화 시작</button>
       <button id="btn-snapshot" class="btn-snapshot">사진 촬영</button>
     </section>
@@ -72,6 +79,7 @@
       <div id="snapshot-buttons">
         <button id="btn-snapshot-png" class="btn-export">PNG 저장</button>
         <button id="btn-snapshot-webp" class="btn-export">WebP 저장</button>
+        <button id="btn-snapshot-pose" class="btn-export">포즈 JSON</button>
       </div>
       <button id="btn-snapshot-close" class="btn-secondary">돌아가기</button>
     </section>
@@ -117,6 +125,7 @@
         <button id="btn-export-webp" class="btn-export">WebP 다운로드</button>
         <button id="btn-export-gif" class="btn-export">GIF 다운로드</button>
         <button id="btn-export-sprite" class="btn-export">스프라이트 시트</button>
+        <button id="btn-export-pose" class="btn-export">포즈 JSON</button>
       </div>
 
       <button id="btn-again" class="btn-secondary">다시 녹화</button>
@@ -131,6 +140,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-segmentation"></script>
   <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3/dist/jszip.min.js"></script>
@@ -139,6 +150,8 @@
   <script src="js/segmenter.js"></script>
   <script src="js/recorder.js"></script>
   <script src="js/exporter.js"></script>
+  <script src="js/poseDetector.js"></script>
+  <script src="js/poseExporter.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
