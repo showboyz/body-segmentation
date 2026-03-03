@@ -49,10 +49,11 @@ var App = {
       var people = results[0];
       var poseResult = results[1];
 
+      var fgColor = Recorder.getFgColor();
+      var bgColor = Recorder.getBgColor();
+      var outlineMode = Recorder.getOutlineMode();
       var mask = await Segmenter.createSilhouetteMask(
-        people,
-        { r: 0, g: 0, b: 0, a: 255 },
-        { r: 0, g: 0, b: 0, a: 0 }
+        people, fgColor, bgColor, outlineMode
       );
       Segmenter.drawLivePreview(this.previewCanvas, this.videoElement, mask);
 

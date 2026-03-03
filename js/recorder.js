@@ -2,9 +2,9 @@ const Recorder = {
   frames: [],
   isRecording: false,
   settings: {
-    duration: 3,
+    duration: 2,
     fps: 10,
-    bgMode: 'transparent'
+    bgMode: 'outline'
   },
 
   getBgColor() {
